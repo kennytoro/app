@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+    environment {
+        NAME = 'Toro'
+    }
+
+    stages {
+
+        stage('Build docker images') {
+            steps {
+                echo "Welcome to ${NAME} Jenkins World"
+                sh '''
+                echo 'docker build . -t kennytoro/auctionapp'
+                '''
+                echo " The Build Url is ${BUILD_URL}"
+            }
+        }
+
+        stage('Push Docker Image to Toro repo') {
+            steps {
+                sh '''
+                echo 'docker push kennytoro/auctionapp'
+                '''
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh "docker images"
+            }
+        }
+        stage('Running the image on k8s cluster') {
+            steps {
+                sh " kubectl apply -f ./deployment/"
+            }
+        }
+        stage('Confirm Deployment is running') {
+            steps {
+                sh '''
+                kubectl get po,svc,deployment
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            // Actions to be perform when the pipeline is successful
+            echo " Thanks... This is  ${BUILD_ID} build"
+        }
+        failure {
+            echo "Check error"
+        }
+    }
+}
